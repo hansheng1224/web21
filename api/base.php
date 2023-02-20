@@ -1,17 +1,18 @@
 <?php
-date_default_timezone_set("Asia/Taipei");
 session_start();
+date_default_timezone_set("Asia/Taipei");
 
 class DB{
     protected $dsn="mysql:host=localhost;charset=utf8;dbname=db21";
     protected $table;
     protected $pdo;
     public $type=[
-                1=>'健康新知',
-                2=>'菸害防治',
-                3=>'癌症防治',
-                4=>'慢性病防治'
-            ];
+        1=>'健康新知',
+        2=>'菸害防治',
+        3=>'癌症防治',
+        4=>'慢性病防治'
+    ];
+
 
     public function __construct($table)
     {
@@ -19,98 +20,84 @@ class DB{
         $this->pdo=new PDO($this->dsn,'root','');
     }
 
-
-    public function find($id){
-        $sql="select * from $this->table ";
-        
-        if(is_array($id)){
-            $tmp=$this->arrayToSqlArray($id);
-
-            $sql = $sql . " where " .join(" && ",$tmp);
-
-        }else{
-            $sql = $sql . " where `id`='$id'";
+    private function atsa($a){
+        foreach($a as $k=>$v){
+          $tmp[]="`$k`='$v'";  
         }
+        return $tmp;
+    }
 
+    
+
+    public function find($a){
+        $sql="select * from $this->table ";
+        if(is_array($a)){
+            $tmp=$this->atsa($a);
+            $sql=$sql. " where ". join(" && ",$tmp);
+        }else{
+            $sql=$sql. " where `id`='$a'";
+        }
         return $this->pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
     }
-    public function all(...$arg){
+
+    public function all(...$a){
         $sql="select * from $this->table ";
-        
-        if(isset($arg[0])){
-            if(is_array($arg[0])){
-                $tmp=$this->arrayToSqlArray($arg[0]);
-    
-                $sql=$sql . " where " . join(" && ",$tmp);
-            }else{
-                $sql = $sql . $arg[0];
-            }
+        if(isset($a[0])){
+        if(is_array($a[0])){
+            $tmp=$this->atsa($a[0]);
+            $sql=$sql. " where ". join(" && ",$tmp);
+        }else{
+            $sql=$sql.$a[0];
         }
-
-        if(isset($arg[1])){
-            $sql = $sql . $arg[1];
         }
-
+        if(isset($a[1])){
+            $sql=$sql.$a[1];
+        }
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-
     }
-    public function save($array){
-        if(isset($array['id'])){
-            //更新
-            $id=$array['id'];
-            unset($array['id']);
-            $tmp=$this->arrayToSqlArray($array);
-            $sql="update $this->table set ".join(",",$tmp)." where `id`='$id'";
-                                            
+
+    public function save($a){
+        if(isset($a['id'])){
+            $id=$a['id'];
+            unset($a['id']);
+            $tmp=$this->atsa($a);
+            $sql="update $this->table set ". join(",",$tmp). " where `id`='$id'";
         }else{
-            //新增
-            $cols=array_keys($array);
-            $sql="insert into $this->table (`".join("`,`",$cols)."`) values('".join("','",$array)."')";
+            $cols=array_keys($a);
+            $sql="insert into $this->table (`".join("`,`",$cols). "`) values ('".join("','",$a)."')";
         }
-
-        //echo $sql;
-
         $this->pdo->exec($sql);
-
     }
-    public function del($id){
-        $sql="delete from $this->table ";
-        
-        if(is_array($id)){
-            $tmp=$this->arrayToSqlArray($id);
 
-            $sql = $sql . " where " .join(" && ",$tmp);
-
+    public function del($a){
+        $sql="delete * from $this->table ";
+        if(is_array($a)){
+            $tmp=$this->atsa($a);
+            $sql=$sql. " where ". join(" && ",$tmp);
         }else{
-            $sql = $sql . " where `id`='$id'";
+            $sql=$sql. " where `id`='$a'";
         }
-
-        return $this->pdo->exec($sql);
+        $this->pdo->exec($sql);
     }
 
     public function count(...$arg){
-        return $this->math('count',...$arg); //...為解構賦值
+        return $this->math('count',...$arg);
     }
 
-    public function sum($col,...$arg){//...為不定參數
-        return $this->math('sum',$col,...$arg); //...為解構賦值
+    public function sum($col,...$arg){
+        return $this->math('sum',$col,...$arg);
     }
+
     public function max($col,...$arg){
-        return $this->math('max',$col,...$arg); //...為解構賦值
+        return $this->math('max',$col,...$arg);
     }
+
     public function min($col,...$arg){
-        return $this->math('min',$col,...$arg); //...為解構賦值
+        return $this->math('min',$col,...$arg);
     }
+
     public function avg($col,...$arg){
-        return $this->math('avg',$col,...$arg); //...為解構賦值
-    }
-
-    private function arrayToSqlArray($array){
-        foreach($array as $key => $value){
-            $tmp[]="`$key`='$value'";
-        }
-
-        return $tmp;
+        return $this->math('avg',$col,...$arg);
     }
 
     private function math($math,...$arg){
@@ -118,36 +105,34 @@ class DB{
             case 'count':
                 $sql="select count(*) from $this->table ";
                 if(isset($arg[0])){
-                    $con=$arg[0]; 
+                    $con=$arg[0];
                 }
             break;
             default:
                 $col=$arg[0];
                 if(isset($arg[1])){
-                    $con=$arg[1];
+                   $con=$arg[1];
                 }
                 $sql="select $math($col) from $this->table ";
-
+                
         }
-
         if(isset($con)){
             if(is_array($con)){
-                $tmp=$this->arrayToSqlArray($con);
-                $sql=$sql . " where " .  join(" && ",$tmp);
+                $tmp=$this->atsa($con);
+                $sql=$sql." where ". join(" && ",$tmp);
             }else{
                 $sql=$sql . $con;
             }
         }
-        //echo $sql;
         return $this->pdo->query($sql)->fetchColumn();
     }
 
 }
 
-function dd($array){
-echo "<pre>";
-print_r($array);
-echo "</pre>";
+function dd($a){
+    echo "<pre>";
+    print_r($a);
+    echo "</pre>";
 }
 
 function to($url){
@@ -162,21 +147,18 @@ function q($sql){
 $Total=new DB('total');
 $User=new DB('user');
 $News=new DB('news');
-$Que=new DB('que');
-$Log=new DB('log');
+
 
 if(!isset($_SESSION['total'])){
     $today=$Total->find(['date'=>date("Y-m-d")]);
     if(empty($today)){
-        //沒有今天的資料->新增
         $today=['date'=>date("Y-m-d"),'total'=>1];
     }else{
-        //有今天的資料->更新    
         $today['total']++;
     }
+
     $Total->save($today);
     $_SESSION['total']=1;
 }
-
 
 ?>
