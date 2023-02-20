@@ -1,6 +1,16 @@
 <style>
     .full{
         display: none;
+        position:absolute;
+        background-color: rgb(100,100,100);
+        z-index: 99;
+        padding: 1rem;
+        box-shadow: -10px;
+        left: -10px;
+        top: 5px;
+        width: 95%;
+        height: 500px;
+        overflow: auto;
     }
     .news-title{
         cursor: pointer;
@@ -8,7 +18,7 @@
     }
 </style>
 <fieldset> 
-    <legend>  目前位置 : 首頁 > 最新文章區</legend>
+    <legend>  目前位置 : 首頁 > 人氣文章區</legend>
     <table>
         <tr>
             <td width="30%">標題</td>
@@ -23,16 +33,23 @@
     $now=$_GET['p']??1;
     $start=($now-1)*$div;
 
-    $rows=$News->all(['sh'=>1]," limit $start,$div");
+    $rows=$News->all(['sh'=>1]," order by `good` desc limit $start,$div");
     foreach($rows as $row){
     ?>
         <tr>
             <td class='news-title'><?=$row['title'];?></td>
-            <td>
+            <td style='position:relative'>
                 <div class='short'><?=mb_substr($row['text'],0,20);?>...</div>
-                <div class="full"><?=nl2br($row['text']);?></div>
+                <div class="full">
+                    <?php
+                    echo "<h3 style='color:skyblue'>".$News->type[$row['type']]."</h3>";
+                    echo "<div style='color:white'".nl2br($row['text'])."</div>";
+                    ?>
+                </div>
             </td>
             <td>
+                <span class="num"><?=$Log->count(['news'=>$row['id']]);?></span> 個人說
+                <img src="./icon/02B03.jpg" alt="" style='width:20px;height:20px'>
                 <?php
                 // dd($_SESSION);
                 if(isset($_SESSION['login'])){
@@ -74,7 +91,20 @@
 </fieldset>
 
 <script>
-    $(".news-title").on('click',function(){
-        $(this).next().children('.short,.full').toggle()
-    })
+    $(".news-title").hover(
+        function(){
+            $(this).next().children('.full').show()
+        },
+        function(){
+            $(this).next().children('.full').hide()
+        }
+    )
+    $(".full").hover(
+        function(){
+            $(this).show();
+        },
+        function(){
+            $(this).hide();
+        }
+    )
 </script>
